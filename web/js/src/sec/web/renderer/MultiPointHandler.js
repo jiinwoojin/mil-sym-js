@@ -1204,6 +1204,44 @@ sec.web.renderer.MultiPointHandler = (function () {
                     jsonOutput += jsonContent;
                     jsonOutput += "}";
                 }
+                //
+                // 패턴 적용
+                var patternType = "FILL"
+                var patternSymbolCode = symbolCode
+                // 예외사항
+                if(symbolCode === "WO-DHPBA---L---" || symbolCode === "WO-DHPBA----A--"){
+                    // 정박지경계 / 정박지영역
+                    patternSymbolCode = "WOS-HPBA--P----"
+                    patternType = "LINE"
+                }else if(symbolCode === "WO-DBSM-----A--" || symbolCode === "WO-DBST-----A--"){
+                    // 해안경사
+                    patternSymbolCode = "WO-DBST-----A--"
+                }
+                var patternStyle = patternType === "FILL"
+                    ? armyc2.c2sd.renderer.utilities.FillPatterns.getCanvasFillStylePattern(patternSymbolCode)
+                    : armyc2.c2sd.renderer.MilStdSVGRenderer.Render(patternSymbolCode).getSVGDataURI()
+                if(patternStyle === "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzVweCIgaGVpZ2h0PSIzNXB4IiBwcmVzZXJ2ZUFzcGVjdFJhdGlvPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZlcnNpb249IjEuMSI+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMTgsMTgpIHNjYWxlKDAuMDI5MTY2NjY2NjY2NjY2NjY3LC0wLjAyOTE2NjY2NjY2NjY2NjY2NykiID48cGF0aCBkPSJudWxsIiBmaWxsPSIjMDAwMDAwIiAvPjwvZz48L3N2Zz4="){
+                    // 빈화면
+                    patternStyle = null
+                }
+                if(patternStyle !== null){
+                    var imageBase64 = patternStyle
+                    if(patternStyle instanceof Element){
+                        imageBase64 = patternStyle.src
+                    }
+                    var data = JSON.parse(jsonOutput)
+                    var features = data.features
+                    if(patternType === "FILL") {
+                        if(features[0].geometry.type === "LineString"){
+                            features[0].geometry.type = "Polygon"
+                            features[0].geometry.coordinates = [features[0].geometry.coordinates]
+                        }
+                        features[0].properties["fillPattern"] = imageBase64
+                    }else{
+                        features[0].properties["linePattern"] = imageBase64
+                    }
+                    jsonOutput = JSON.stringify(data)
+                }
             }
             catch (exc)
             {
@@ -1215,6 +1253,7 @@ sec.web.renderer.MultiPointHandler = (function () {
                 ErrorLogger.LogException("MultiPointHandler", "RenderSymbol", exc);
 
             }
+            //
             var debug = false;
             if (debug === true) {
                 console.info("Symbol Code: " + symbolCode);
