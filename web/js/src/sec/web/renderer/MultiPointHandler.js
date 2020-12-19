@@ -1208,27 +1208,32 @@ sec.web.renderer.MultiPointHandler = (function () {
                 // 패턴 적용
                 var patternType = "FILL"
                 var patternSymbolCode = symbolCode
+                var patternColor = patternType === "FILL"
+                    ? mSymbol.getFillColor()
+                    : mSymbol.getLineColor()
+                var modifiers = {}
+                if(patternColor != null){
+                    patternColor = patternColor.toHexString(false)
+                    modifiers[armyc2.c2sd.renderer.utilities.MilStdAttributes.LineColor] = patternColor
+                }
                 // 예외사항
                 if(symbolCode === "WO-DHPBA---L---" || symbolCode === "WO-DHPBA----A--"){
                     // 정박지경계 / 정박지영역
                     patternSymbolCode = "WOS-HPBA--P----"
                     patternType = "LINE"
-                }else if(symbolCode === "WO-DBSM-----A--" || symbolCode === "WO-DBST-----A--"){
+                }else if(symbolCode === "WO-DBSM-----A--"){
                     // 해안경사
                     patternSymbolCode = "WO-DBST-----A--"
                 }
                 var patternStyle = patternType === "FILL"
-                    ? armyc2.c2sd.renderer.utilities.FillPatterns.getCanvasFillStylePattern(patternSymbolCode)
-                    : armyc2.c2sd.renderer.MilStdSVGRenderer.Render(patternSymbolCode).getSVGDataURI()
-                if(patternStyle === "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzVweCIgaGVpZ2h0PSIzNXB4IiBwcmVzZXJ2ZUFzcGVjdFJhdGlvPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZlcnNpb249IjEuMSI+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMTgsMTgpIHNjYWxlKDAuMDI5MTY2NjY2NjY2NjY2NjY3LC0wLjAyOTE2NjY2NjY2NjY2NjY2NykiID48cGF0aCBkPSJudWxsIiBmaWxsPSIjMDAwMDAwIiAvPjwvZz48L3N2Zz4="){
+                    ? armyc2.c2sd.renderer.utilities.FillPatterns.getSVGFillStylePattern(patternSymbolCode,patternColor)
+                    : armyc2.c2sd.renderer.MilStdSVGRenderer.Render(patternSymbolCode, modifiers)._svg
+                if(patternStyle === '<svg width="35px" height="35px" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" version="1.1"><g transform="translate(18,18) scale(0.029166666666666667,-0.029166666666666667)" ><path d="null" fill="#000000" /></g></svg>'){
                     // 빈화면
                     patternStyle = null
                 }
                 if(patternStyle !== null){
-                    var imageBase64 = patternStyle
-                    if(patternStyle instanceof Element){
-                        imageBase64 = patternStyle.src
-                    }
+                    var svgStr = patternStyle
                     var data = JSON.parse(jsonOutput)
                     var features = data.features
                     if(patternType === "FILL") {
@@ -1236,9 +1241,9 @@ sec.web.renderer.MultiPointHandler = (function () {
                         if(features[0].geometry.type === "LineString"){
                             features[0].geometry.coordinates = [features[0].geometry.coordinates]
                         }
-                        features[0].properties["fillPattern"] = imageBase64
+                        features[0].properties["fillPattern"] = svgStr
                     }else{
-                        features[0].properties["linePattern"] = imageBase64
+                        features[0].properties["linePattern"] = svgStr
                     }
                     jsonOutput = JSON.stringify(data)
                 }
