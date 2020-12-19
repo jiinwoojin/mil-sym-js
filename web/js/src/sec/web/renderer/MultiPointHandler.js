@@ -1232,8 +1232,8 @@ sec.web.renderer.MultiPointHandler = (function () {
                     var data = JSON.parse(jsonOutput)
                     var features = data.features
                     if(patternType === "FILL") {
+                        features[0].geometry.type = "Polygon"
                         if(features[0].geometry.type === "LineString"){
-                            features[0].geometry.type = "Polygon"
                             features[0].geometry.coordinates = [features[0].geometry.coordinates]
                         }
                         features[0].properties["fillPattern"] = imageBase64
